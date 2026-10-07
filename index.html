@@ -126,16 +126,16 @@ let W=null,ME=null,SEL=null,TAB='c',eb=0,ID=Math.random().toString(36).slice(2),
 const status=t=>{$('bar').dataset.st=t;if($('est'))$('est').textContent=t};
 async function engine(){if(eb)return;eb=1;try{
 await loadKeys();
-let w=await pj('gp_world')||init();
+let w=await pj('gp_world');if(!w){if(W){status('World read failed, skipping tick');eb=0;return}w=init()}
 const busy=x=>x.eng&&x.eng.by!==ID&&Date.now()-x.eng.ts<25000&&(x.eng.adm||!ADMIN);
 if(busy(w)){W=w;eb=0;return}
 if(!ADMIN&&w.eng&&w.eng.by!==ID){await new Promise(r=>setTimeout(r,Math.random()*3000));const w2=await pj('gp_world');if(w2){w=w2;if(busy(w)){W=w;eb=0;return}}}
-W=w;W.eng={by:ID,ts:Date.now(),adm:ADMIN};
+W=w;W.eng={by:ID,ts:Date.now(),adm:ADMIN};W.ver=(W.ver||0)+1;const myVer=W.ver;if(!await sj('gp_world',W)){eb=0;return}
 for(const c of PN){const o=await pj('gp_act_'+KEY(c));if(!o)continue;for(const a of o.l){if(a.n<=(W.ack[c]||0))continue;try{if(a.t==='weapon'){await judge(c,{...a,n:a.n});}else{const e=doAct(c,a);if(e&&e.length>3)lg(`(${c}: ${e})`)}W.ack[c]=a.n}catch(e){lg(`(${c}'s order #${a.n} failed: ${e})`);break}}}
 W.q=W.q||[];while(W.q.length){const q=W.q[0];try{await judge(q.c,q);W.q.shift()}catch(e){lg(`(${q.c}'s weapon is waiting for the Arbiter: ${e})`);break}}
 AIN=5;HLN=1;const T=turnMs();let due=Math.floor((Date.now()-W.ts)/T);if(due>200){due=200;W.ts=Date.now()-200*T}
 while(due-->0)await tickW();
-W.eng.ts=Date.now();if(!ADMIN){const c=await pj('gp_world');if(c&&c.eng&&c.eng.by!==ID&&c.eng.adm&&Date.now()-c.eng.ts<25000){W=c;eb=0;return}}await sj('gp_world',W);status('Engine OK '+new Date().toLocaleTimeString())}catch(e){status('Engine error: '+e)}eb=0}
+W.eng.ts=Date.now();{const cur=await pj('gp_world');if(cur&&(cur.ver||0)!==myVer){W=cur;status('Another engine wrote first; discarded my tick');eb=0;return}}W.ver=myVer+1;if(!ADMIN){const c=await pj('gp_world');if(c&&c.eng&&c.eng.by!==ID&&c.eng.adm&&Date.now()-c.eng.ts<25000){W=c;eb=0;return}}await sj('gp_world',W);status('Engine OK '+new Date().toLocaleTimeString())}catch(e){status('Engine error: '+e)}eb=0}
 let EP=null;
 async function poll(){if(engOn)await engine();else{const w=await pj('gp_world');if(w)W=w}if(W){if(EP!==null&&W.ep!==EP)out={n:0,l:[]};EP=W.ep}render(1)}
 async function resetAll(){if(!confirm('FULL RESET: wipes the world, all player passwords and all queued orders. Continue?'))return;status('Resetting…');const fails=[];
