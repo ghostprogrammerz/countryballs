@@ -61,7 +61,7 @@ for(const c of Object.values(W.c)){c.tx=.2;c.dt=0;c.mo=Math.round(gdpOf(c)*.45)}
 for(const c of Object.values(W.c))for(const k of['g','mt','mo','f','mil'])c[k]=Math.round(c[k]*10)/10;return W}
 
 // ── RULES ──
-const lg=t=>{W.log.unshift(new Date().toLocaleString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' · '+t);W.log=W.log.slice(0,200)};
+const lg=t=>{W.log.unshift(new Date().toLocaleString([],{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' · '+t);W.log=W.log.slice(0,60)};
 const ctl=n=>{let cur=n,seen=new Set();while(W.c[cur]&&W.c[cur].owner&&W.c[cur].owner!==cur&&!seen.has(cur)){seen.add(cur);cur=W.c[cur].owner}return cur},cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 // ── ECONOMY: one monetary pool per country. land -> output -> tax -> treasury ──
 const TX=c=>c.tx==null?.2:c.tx;
@@ -135,7 +135,7 @@ for(const c of PN){const o=await pj('gp_act_'+KEY(c));if(!o)continue;for(const a
 W.q=W.q||[];while(W.q.length){const q=W.q[0];try{await judge(q.c,q);W.q.shift()}catch(e){lg(`(${q.c}'s weapon is waiting for the Arbiter: ${e})`);break}}
 AIN=5;HLN=1;const T=turnMs();let due=Math.floor((Date.now()-W.ts)/T);if(due>200){due=200;W.ts=Date.now()-200*T}
 while(due-->0)await tickW();
-W.eng.ts=Date.now();{const cur=await pj('gp_world');if(cur&&(cur.ver||0)!==myVer){W=cur;status('Another engine wrote first; discarded my tick');eb=0;return}}W.ver=myVer+1;if(!ADMIN){const c=await pj('gp_world');if(c&&c.eng&&c.eng.by!==ID&&c.eng.adm&&Date.now()-c.eng.ts<25000){W=c;eb=0;return}}await sj('gp_world',W);status('Engine OK '+new Date().toLocaleTimeString())}catch(e){status('Engine error: '+e)}eb=0}
+W.eng.ts=Date.now();{const cur=await pj('gp_world');if(cur&&(cur.ver||0)!==myVer){W=cur;status('Another engine wrote first; discarded my tick');eb=0;return}}W.ver=myVer+1;if(!ADMIN){const c=await pj('gp_world');if(c&&c.eng&&c.eng.by!==ID&&c.eng.adm&&Date.now()-c.eng.ts<25000){W=c;eb=0;return}}{let sz=JSON.stringify(W).length;if(sz>45000){W.log=W.log.slice(0,15);sz=JSON.stringify(W).length}const ok=await sj('gp_world',W);status((ok?'Engine OK ':'SAVE FAILED ')+new Date().toLocaleTimeString()+' · world '+(sz/1024).toFixed(1)+' KB')}}catch(e){status('Engine error: '+e)}eb=0}
 let EP=null;
 async function poll(){if(engOn)await engine();else{const w=await pj('gp_world');if(w)W=w}if(W){if(EP!==null&&W.ep!==EP)out={n:0,l:[]};EP=W.ep}render(1)}
 async function resetAll(){if(!confirm('FULL RESET: wipes the world, all player passwords and all queued orders. Continue?'))return;status('Resetting…');const fails=[];
